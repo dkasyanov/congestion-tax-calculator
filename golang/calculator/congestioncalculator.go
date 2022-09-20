@@ -41,33 +41,49 @@ func max(x, y int) int {
 	return x
 }
 
+func min(x, y int) int {
+	if x > y {
+		return y
+	}
+	return x
+}
+
 func GetTax(vehicle model.Vehicle, dates []time.Time) int {
-	intervalStart := dates[0]
+	intervalStart := time.Time{}
 	totalFee := 0
-	for _, date := range dates {
-		nextFee := getTollFee(date, vehicle)
-		tempFee := getTollFee(intervalStart, vehicle)
+	dailyFee := 0
+	hourlyFee := 0
+
+	for idx, date := range dates {
+		if date.YearDay() != intervalStart.YearDay() {
+			// New date, calculate result for the previous one
+			dailyFee = dailyFee + hourlyFee
+			totalFee = totalFee + min(dailyFee, 60)
+			dailyFee = 0
+			hourlyFee = 0
+			intervalStart = date
+		}
+		fmt.Printf("Date: %s: %d\n", date, dailyFee)
 
 		diffInNanos := date.UnixNano() - intervalStart.UnixNano()
 		minutes := diffInNanos / 1000000 / 1000 / 60
 
-		if minutes <= 60 {
-			if totalFee > 0 {
-				totalFee = totalFee - tempFee
-			}
-			if nextFee >= tempFee {
-				tempFee = nextFee
-			}
-			totalFee = totalFee + tempFee
-		} else {
+		if minutes >= 60 {
+			dailyFee = dailyFee + hourlyFee
+			hourlyFee = 0
 			intervalStart = date
-			totalFee = totalFee + nextFee
+		}
+
+		currFee := getTollFee(date, vehicle)
+		hourlyFee = max(hourlyFee, currFee)
+
+		if idx == len(dates)-1 {
+			// Last in the list
+			dailyFee = dailyFee + hourlyFee
+			totalFee = totalFee + min(dailyFee, 60)
 		}
 	}
 
-	if totalFee > 60 {
-		totalFee = 60
-	}
 	return totalFee
 }
 
@@ -86,7 +102,7 @@ func getTollFee(t time.Time, v model.Vehicle) int {
 	}
 
 	hour, minute := t.Hour(), t.Minute()
-
+	// TODO: Should fetch from DB or API
 	if hour == 6 && minute >= 0 && minute <= 29 {
 		return 8
 	}
@@ -99,7 +115,8 @@ func getTollFee(t time.Time, v model.Vehicle) int {
 	if hour == 8 && minute >= 0 && minute <= 29 {
 		return 13
 	}
-	if hour >= 8 && hour <= 14 && minute >= 30 && minute <= 59 {
+	// Fixed rule to match interval 8:30 - 14:59
+	if hour >= 8 && hour <= 14 && minute <= 59 {
 		return 8
 	}
 	if hour == 15 && minute >= 0 && minute <= 29 {
@@ -127,6 +144,7 @@ func isTollFreeDate(date time.Time) bool {
 		return true
 	}
 
+	// TODO: Should fetch from DB or API
 	if year == 2013 {
 		if month == 1 && day == 1 || month == 3 && (day == 28 || day == 29) || month == 4 && (day == 1 || day == 30) || month == 5 && (day == 1 || day == 8 || day == 9) || month == 6 && (day == 5 || day == 6 || day == 21) || month == 7 || month == 11 && day == 1 || month == 12 && (day == 24 || day == 25 || day == 26 || day == 31) {
 			return true

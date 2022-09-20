@@ -22,13 +22,13 @@ func main() {
 		ctx.BindJSON(&data)
 
 		dates := []time.Time{}
-		// loc, _ := time.LoadLocation("Europe/Stockholm")
 		for _, record := range data.Records {
 			parsed, _ := time.Parse("2006-01-02 15:04:05", record)
 			dates = append(dates, parsed)
 		}
 
-		tax := calculator.GetTax(model.Car{}, dates)
+		vehicle := model.NewVehicle(data.VehicleType)
+		tax := calculator.GetTax(vehicle, dates)
 
 		ctx.JSON(http.StatusOK, gin.H{"data": tax})
 	})

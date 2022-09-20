@@ -1,6 +1,7 @@
 package calculator
 
 import (
+	"congestion-calculator/model"
 	"fmt"
 	"time"
 )
@@ -33,12 +34,19 @@ func (tfv TollFreeVehicles) String() string {
 	}
 }
 
-func GetTax(vehicle Vehicle, dates []time.Time) int {
+func max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
+}
+
+func GetTax(vehicle model.Vehicle, dates []time.Time) int {
 	intervalStart := dates[0]
 	totalFee := 0
 	for _, date := range dates {
 		nextFee := getTollFee(date, vehicle)
-		tempFee := getTollFee(date, vehicle)
+		tempFee := getTollFee(intervalStart, vehicle)
 
 		diffInNanos := date.UnixNano() - intervalStart.UnixNano()
 		minutes := diffInNanos / 1000000 / 1000 / 60
@@ -50,7 +58,9 @@ func GetTax(vehicle Vehicle, dates []time.Time) int {
 			if nextFee >= tempFee {
 				tempFee = nextFee
 			}
+			totalFee = totalFee + tempFee
 		} else {
+			intervalStart = date
 			totalFee = totalFee + nextFee
 		}
 	}
@@ -61,16 +71,16 @@ func GetTax(vehicle Vehicle, dates []time.Time) int {
 	return totalFee
 }
 
-func isTollFreeVehicle(v Vehicle) bool {
+func isTollFreeVehicle(v model.Vehicle) bool {
 	if v == nil {
 		return false
 	}
-	vehicleType := v.getVehicleType()
+	vehicleType := v.GetVehicleType()
 
 	return vehicleType == TollFreeVehicles(Motorcycle).String() || vehicleType == TollFreeVehicles(Tractor).String() || vehicleType == TollFreeVehicles(Emergency).String() || vehicleType == TollFreeVehicles(Diplomat).String() || vehicleType == TollFreeVehicles(Foreign).String() || vehicleType == TollFreeVehicles(Military).String()
 }
 
-func getTollFee(t time.Time, v Vehicle) int {
+func getTollFee(t time.Time, v model.Vehicle) int {
 	if isTollFreeDate(t) || isTollFreeVehicle(v) {
 		return 0
 	}

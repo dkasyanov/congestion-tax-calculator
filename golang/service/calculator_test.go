@@ -1,14 +1,15 @@
-package calculator
+package service
 
 import (
-	"congestion-calculator/model"
+	"congestion-calculator/entity"
+	"context"
 	"testing"
 	"time"
 )
 
 type test struct {
 	name           string
-	inputVehicle   model.Vehicle
+	inputVehicle   entity.Vehicle
 	inputDates     []time.Time
 	expectedResult int
 }
@@ -17,13 +18,13 @@ func TestGetTax(t *testing.T) {
 	tests := []test{
 		{
 			name:           "Car with no records",
-			inputVehicle:   model.Car{},
+			inputVehicle:   entity.Car{},
 			inputDates:     []time.Time{},
 			expectedResult: 0,
 		},
 		{
 			name:         "Car with single record",
-			inputVehicle: model.Car{},
+			inputVehicle: entity.Car{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 15, 12, 15, 7, 0, time.UTC),
 			},
@@ -31,7 +32,7 @@ func TestGetTax(t *testing.T) {
 		},
 		{
 			name:         "Car with 2 records different days",
-			inputVehicle: model.Car{},
+			inputVehicle: entity.Car{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 15, 12, 15, 7, 0, time.UTC),
 				time.Date(2013, 04, 16, 12, 15, 7, 0, time.UTC),
@@ -40,7 +41,7 @@ func TestGetTax(t *testing.T) {
 		},
 		{
 			name:         "Car with 2 records same day, different time",
-			inputVehicle: model.Car{},
+			inputVehicle: entity.Car{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 15, 12, 15, 7, 0, time.UTC),
 				time.Date(2013, 04, 15, 15, 15, 7, 0, time.UTC),
@@ -49,7 +50,7 @@ func TestGetTax(t *testing.T) {
 		},
 		{
 			name:         "Car with 2 records same day, in 1 hour",
-			inputVehicle: model.Car{},
+			inputVehicle: entity.Car{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 15, 14, 45, 7, 0, time.UTC),
 				time.Date(2013, 04, 15, 15, 05, 7, 0, time.UTC),
@@ -57,8 +58,8 @@ func TestGetTax(t *testing.T) {
 			expectedResult: 13,
 		},
 		{
-			name:         "Motorbike with 3 records same day, in 1 hour",
-			inputVehicle: model.Motorbike{},
+			name:         "Motorcycle with 3 records same day, in 1 hour",
+			inputVehicle: entity.Motorcycle{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 15, 14, 45, 7, 0, time.UTC),
 				time.Date(2013, 04, 15, 15, 05, 7, 0, time.UTC),
@@ -68,7 +69,7 @@ func TestGetTax(t *testing.T) {
 		},
 		{
 			name:         "Car with 3 records, 1 on weekend",
-			inputVehicle: model.Car{},
+			inputVehicle: entity.Car{},
 			inputDates: []time.Time{
 				time.Date(2013, 04, 4, 14, 45, 7, 0, time.UTC),
 				time.Date(2013, 04, 5, 15, 05, 7, 0, time.UTC),
@@ -78,10 +79,20 @@ func TestGetTax(t *testing.T) {
 		},
 	}
 
+	s := Service{
+		conf:                 nil,
+		db:                   nil,
+		rulesCache:           nil,
+		lastRefreshTimestamp: time.Now().UTC(),
+	}
+
 	for _, tc := range tests {
-		got := GetTax(tc.inputVehicle, tc.inputDates)
+		got, err := s.GetTax(context.TODO(), "Gothenburg", tc.inputVehicle, tc.inputDates)
 		if got != tc.expectedResult {
 			t.Fatalf("test: %s: expected: %d, got: %d", tc.name, tc.expectedResult, got)
+		}
+		if err != nil {
+			t.Fatalf("test: %s: expected: %d, got: error %s", tc.name, tc.expectedResult, err.Error())
 		}
 	}
 }

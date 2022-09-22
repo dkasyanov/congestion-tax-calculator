@@ -1,6 +1,7 @@
 package service
 
 import (
+	"congestion-calculator/config"
 	"congestion-calculator/entity"
 	"context"
 	"testing"
@@ -65,7 +66,7 @@ func TestGetTax(t *testing.T) {
 				time.Date(2013, 04, 15, 15, 05, 7, 0, time.UTC),
 				time.Date(2013, 04, 15, 15, 07, 7, 0, time.UTC),
 			},
-			expectedResult: 13,
+			expectedResult: 0,
 		},
 		{
 			name:         "Car with 3 records, 1 on weekend",
@@ -80,9 +81,28 @@ func TestGetTax(t *testing.T) {
 	}
 
 	s := Service{
-		conf:                 nil,
-		db:                   nil,
-		rulesCache:           nil,
+		conf: &config.Config{CacheTTLSeconds: 3600},
+		db:   nil,
+		rulesCache: map[string]*entity.CityTaxRule{
+			"Gothenburg": {
+				City:          "Gothenburg",
+				DailyMax:      60,
+				NoTaxWeekdays: []string{"SATURDAY", "SUNDAY"},
+				NoTaxMonth:    []string{"JULY"},
+				NoTaxDates:    []string{},
+				TaxByTime: []entity.TaxByTime{
+					{Start: "06:00:00", End: "06:29:59", Amount: 8},
+					{Start: "06:30:00", End: "06:59:59", Amount: 13},
+					{Start: "07:00:00", End: "07:59:59", Amount: 18},
+					{Start: "08:00:00", End: "08:29:59", Amount: 13},
+					{Start: "08:30:00", End: "14:59:59", Amount: 8},
+					{Start: "15:00:00", End: "15:29:59", Amount: 13},
+					{Start: "15:30:00", End: "16:59:59", Amount: 18},
+					{Start: "17:00:00", End: "17:59:59", Amount: 13},
+					{Start: "18:00:00", End: "18:59:59", Amount: 8},
+				},
+			},
+		},
 		lastRefreshTimestamp: time.Now().UTC(),
 	}
 

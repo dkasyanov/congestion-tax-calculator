@@ -62,12 +62,12 @@ func (s *Service) GetTax(ctx context.Context, city string, vehicle entity.Vehicl
 		if date.YearDay() != intervalStart.YearDay() {
 			// New date, calculate result for the previous one
 			dailyFee = dailyFee + hourlyFee
-			totalFee = totalFee + utils.Min(dailyFee, rules.DailyTax)
+			totalFee = totalFee + utils.Min(dailyFee, rules.DailyMax)
+			// Reset daily and hourly fee
 			dailyFee = 0
 			hourlyFee = 0
 			intervalStart = date
 		}
-		//fmt.Printf("Date: %s: %d\n", date, dailyFee)
 
 		diffInNanos := date.UnixNano() - intervalStart.UnixNano()
 		minutes := diffInNanos / 1000000 / 1000 / 60
@@ -83,9 +83,9 @@ func (s *Service) GetTax(ctx context.Context, city string, vehicle entity.Vehicl
 		hourlyFee = utils.Max(hourlyFee, currFee)
 
 		if idx == len(dates)-1 {
-			// Last in the list
+			// Last in the list: add daily and hourly fee to the total tax
 			dailyFee = dailyFee + hourlyFee
-			totalFee = totalFee + utils.Min(dailyFee, rules.DailyTax)
+			totalFee = totalFee + utils.Min(dailyFee, rules.DailyMax)
 		}
 	}
 
@@ -104,10 +104,26 @@ func getTollFee(rules *entity.CityTaxRule, t time.Time, v entity.Vehicle) int {
 		return 0
 	}
 
-	tString := t.Format(constants.HHMMSSLayout)
 	for _, timeRule := range rules.TaxByTime {
-		// TODO: add comment
-		if tString >= timeRule.Start && tString <= timeRule.End {
+		start, err := time.Parse(constants.HHMMSSLayout, timeRule.Start)
+		if err != nil {
+			fmt.Printf("Cannot parse time record %s", timeRule.Start)
+			continue
+		}
+
+		end, err := time.Parse(constants.HHMMSSLayout, timeRule.End)
+		if err != nil {
+			fmt.Printf("Cannot parse time record %s", timeRule.End)
+			continue
+		}
+
+		timeOnly, err := time.Parse(constants.HHMMSSLayout, t.Format(constants.HHMMSSLayout))
+		if err != nil {
+			fmt.Printf("Cannot parse time record %s", timeRule.End)
+			continue
+		}
+
+		if timeOnly.After(start) && timeOnly.Before(end) {
 			return timeRule.Amount
 		}
 	}

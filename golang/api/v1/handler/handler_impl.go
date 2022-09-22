@@ -23,7 +23,7 @@ func postRequestUrl(s service.IService) gin.HandlerFunc {
 			fmt.Println(err.Error())
 		}
 
-		dates := []time.Time{}
+		var dates []time.Time
 		for _, record := range data.Records {
 			parsed, _ := time.Parse(constants.DateTimeLayout, record)
 			dates = append(dates, parsed)

@@ -2,7 +2,7 @@ package entity
 
 type CityTaxRule struct {
 	City          string      `bson:"city"`
-	DailyTax      int         `bson:"dailyTax"`
+	DailyMax      int         `bson:"dailyMax"`
 	NoTaxWeekdays []string    `bson:"noTaxWeekdays"`
 	NoTaxMonth    []string    `bson:"noTaxMonth"`
 	NoTaxDates    []string    `bson:"noTaxDates"`

@@ -1,4 +1,4 @@
 ---
-ApplicationPort: "localhost:8080"
-MonitoringPort: "localhost:8081"
+ApplicationPort: ":8080"
+MonitoringPort: ":8081"
 CacheTTLSeconds: 60

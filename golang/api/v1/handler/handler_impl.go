@@ -5,9 +5,10 @@ import (
 	"congestion-calculator/pkg/constants"
 	"congestion-calculator/service"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type RequestBody struct {
@@ -20,7 +21,8 @@ func postRequestUrl(s service.IService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var data RequestBody
 		if err := ctx.BindJSON(&data); err != nil {
-			fmt.Println(err.Error())
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Cannot parse input"})
+			return
 		}
 
 		var dates []time.Time
@@ -32,7 +34,11 @@ func postRequestUrl(s service.IService) gin.HandlerFunc {
 		vehicle := entity.NewVehicle(data.VehicleType)
 		tax, err := s.GetTax(ctx, data.City, vehicle, dates)
 		if err != nil {
-			fmt.Println(err.Error())
+			ctx.JSON(
+				http.StatusInternalServerError,
+				gin.H{"message": fmt.Sprintf("Cannot calculate tax. Error: %s", err.Error())},
+			)
+			return
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{"tax": tax})

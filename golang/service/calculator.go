@@ -36,13 +36,14 @@ func (s *Service) getTaxRules(ctx context.Context, city string) (*entity.CityTax
 		}
 	}
 
+	s.lastRefreshTimestamp = time.Now().UTC()
+
 	rules, err := s.db.GetCityTaxRule(ctx, city)
 	if err != nil {
 		return nil, err
 	}
 
 	s.rulesCache[city] = rules
-	s.lastRefreshTimestamp = time.Now().UTC()
 
 	return rules, nil
 }

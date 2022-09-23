@@ -30,6 +30,7 @@ Content-Type: application/json
 }
 
 # {
+#     "city": "Gothenburg",
 #     "vehicle_type": "Car",
 #     "records": [
 #         "2013-01-14 21:00:00", // Free (out of working hours)
